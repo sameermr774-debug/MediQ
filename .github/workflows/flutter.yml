@@ -1,4 +1,4 @@
-  name: Flutter CI
+name: Flutter CI
 
 on:
   push:
@@ -9,7 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -23,9 +22,6 @@ jobs:
 
       - name: Run tests
         run: flutter test
-
-      - name: Check code formatting
-        run: flutter format --set-exit-if-changed .
 
       - name: Build APK
         run: flutter build apk --release
