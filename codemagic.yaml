@@ -1,0 +1,58 @@
+workflows:
+  build_flutter_apk:
+    name: Build Flutter APK (regen android + release)
+    max_build_duration: 120
+    environment:
+      flutter: stable
+      vars:
+        # agar aapke paas keystore use karte ho to yaha secrets set kar sakte ho
+        # For release signing, set these in Codemagic UI as encrypted environment variables:
+        # ANDROID_KEYSTORE_BASE64: ""
+        # ANDROID_KEYSTORE_PASSWORD: ""
+        # ANDROID_KEY_PASSWORD: ""
+        # ANDROID_KEY_ALIAS: ""
+    scripts:
+      - name: Checkout repo
+        script: |
+          echo "Repo checked out by Codemagic"
+
+      - name: Backup existing android (if any)
+        script: |
+          if [ -d android ]; then
+            ts=$(date +%s)
+            mv android android_backup_${ts}
+            echo "android backed up -> android_backup_${ts}"
+          else
+            echo "no android folder to backup"
+          fi
+
+      - name: Regenerate platform directories (flutter create)
+        script: |
+          echo "Running flutter create . to regenerate android/ (safe: lib/ and pubspec.yaml preserved)"
+          flutter create .
+
+      - name: Install dependencies
+        script: |
+          flutter pub get
+
+      - name: (Optional) Apply signing config (if you use keystore)
+        script: |
+          # If you have keystore environment variables configured in Codemagic,
+          # uncomment and adapt the following lines to decode and place keystore.
+          #
+          # if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+          #   echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/keystore.jks
+          #   echo "Keystore decoded and placed at android/app/keystore.jks"
+          #   # Ensure android/app/build.gradle is configured to use the keystore name and passwords
+          # fi
+          echo "Signing step skipped by default. Configure keystore vars in Codemagic if needed."
+
+      - name: Build APK (release)
+        script: |
+          set -e
+          echo "Starting release build..."
+          flutter build apk --release
+          echo "Build finished."
+
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
